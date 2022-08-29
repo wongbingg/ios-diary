@@ -5,6 +5,7 @@
 // 
 
 import UIKit
+import CoreLocation
 
 final class DiaryListViewController: UIViewController {
     // MARK: - NameSpace
@@ -26,6 +27,12 @@ final class DiaryListViewController: UIViewController {
         setupNavigationBar()
         setupDiaryListView()
         adaptDelegate()
+        // Networking TEST
+//        NetworkManager.shared.requestWeatherData { data in
+//            print(data.weather[0].main)
+//            print(data.weather[0].icon)
+//        }
+        // Networking TEST
     }
     
     override func viewWillAppear(_ animated: Bool) {

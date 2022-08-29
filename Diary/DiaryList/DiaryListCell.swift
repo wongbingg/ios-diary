@@ -26,6 +26,15 @@ final class DiaryListCell: UITableViewCell {
         return label
     }()
     
+    private let weatherIcon: UIImageView = {
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.heightAnchor.constraint(equalToConstant: 20).isActive = true
+        imageView.widthAnchor.constraint(equalToConstant: 20).isActive = true
+        imageView.image = UIImage(systemName: "plus")
+        return imageView
+    }()
+    
     private let preViewLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -77,6 +86,7 @@ final class DiaryListCell: UITableViewCell {
         mainStackView.addArrangedSubview(titleLabel)
         mainStackView.addArrangedSubview(horizontalStackView)
         horizontalStackView.addArrangedSubview(dateLabel)
+        horizontalStackView.addArrangedSubview(weatherIcon)
         horizontalStackView.addArrangedSubview(preViewLabel)
     }
     

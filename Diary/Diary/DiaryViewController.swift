@@ -6,10 +6,11 @@
 //
 
 import UIKit
+import CoreLocation
 
 final class DiaryViewController: UIViewController {
     // MARK: - NameSpace
-
+    
     private enum AlertMassage {
         static let shareActionTitle = "share..."
         static let deleteActionTitle = "Delete"
@@ -19,12 +20,15 @@ final class DiaryViewController: UIViewController {
         static let cancelActionTitle = "Cancel"
         static let newDiary = "새로운일기장"
     }
-
+    
     // MARK: - Properties
     
     let diaryView = DiaryView(frame: .zero)
     var coreDataDiary: Diary?
     var mode: PageMode? = .create
+    var locationManager: CLLocationManager!
+    var lat: String?
+    var lon: String?
     
     // MARK: - ViewLifeCycle
     
@@ -34,6 +38,12 @@ final class DiaryViewController: UIViewController {
         setupInitialView()
         setupKeyboard()
         setupNotification()
+        
+        locationManager = CLLocationManager()
+        locationManager.delegate = self
+//        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.requestAlwaysAuthorization()
+        locationManager.startUpdatingLocation()
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -44,6 +54,16 @@ final class DiaryViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         performAppropriateMode()
+        NetworkManager.shared.requestWeatherData(latitude: lat, longitude: lon) { data in
+            print(data.weather[0].main)
+            print(data.weather[0].icon)
+            print(data.name)
+            print(data.sys.country)
+            DispatchQueue.main.async {
+                let action = UIAlertAction(title: "네", style: .default)
+                self.generateAlertController(title: "알림", message: "위치업데이트완료", style: .alert, actions: [action])
+            }
+        }
     }
     
     // MARK: - UI Methods
@@ -213,5 +233,54 @@ extension DiaryViewController {
     @objc private func hideKeyboard(_ sender: Any) {
         view.endEditing(true)
         updateDiary()
+    }
+}
+
+// MARK: - CLLocationManagerDelegate
+
+extension DiaryViewController: CLLocationManagerDelegate {
+    
+    func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+        if status == .authorizedAlways {
+            print("")
+            print("===============================")
+            print("[ViewController > locationManager() : 위치 사용 권한 항상 허용]")
+            print("===============================")
+            print("")
+        }
+        if status == .authorizedWhenInUse {
+            print("")
+            print("===============================")
+            print("[ViewController > locationManager() : 위치 사용 권한 앱 사용 시 허용]")
+            print("===============================")
+            print("")
+        }
+        if status == .denied {
+            print("")
+            print("===============================")
+            print("[ViewController > locationManager() : 위치 사용 권한 거부]")
+            print("===============================")
+            print("")
+        }
+        if status == .restricted || status == .notDetermined {
+            print("")
+            print("===============================")
+            print("[ViewController > locationManager() : 위치 사용 권한 대기 상태]")
+            print("===============================")
+            print("")
+        }
+    }
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+//        guard let locValue: CLLocationCoordinate2D = manager.location?.coordinate else { return }
+//        print("lat: \(locValue.latitude) , lon: \(locValue.longitude)")
+        if let location = locations.last {
+            lat = String(location.coordinate.latitude)
+            lon = String(location.coordinate.longitude)
+        }
+        locationManager.stopUpdatingLocation()
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        print(error.localizedDescription)
     }
 }
