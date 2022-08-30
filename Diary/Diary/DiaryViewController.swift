@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import CoreLocation
 
 final class DiaryViewController: UIViewController {
     // MARK: - NameSpace
@@ -21,7 +22,8 @@ final class DiaryViewController: UIViewController {
     }
 
     // MARK: - Properties
-    
+
+    let locationManager = CLLocationManager()
     let diaryView = DiaryView(frame: .zero)
     var coreDataDiary: Diary?
     var mode: PageMode? = .create
@@ -34,6 +36,9 @@ final class DiaryViewController: UIViewController {
         setupInitialView()
         setupKeyboard()
         setupNotification()
+        locationManager.delegate = self
+        locationManager.requestAlwaysAuthorization()
+        locationManager.startUpdatingLocation()
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -213,5 +218,19 @@ extension DiaryViewController {
     @objc private func hideKeyboard(_ sender: Any) {
         view.endEditing(true)
         updateDiary()
+    }
+}
+
+extension DiaryViewController: CLLocationManagerDelegate {
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        if let coordinate = locations.last?.coordinate {
+            locationManager.stopUpdatingLocation()
+            print(coordinate.latitude)
+            print(coordinate.longitude)
+        }
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        print(error.localizedDescription)
     }
 }
