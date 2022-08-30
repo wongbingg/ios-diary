@@ -8,13 +8,13 @@ import UIKit
 
 final class DiaryListViewController: UIViewController {
     // MARK: - NameSpace
-
+    
     private enum DiaryListNameSpace {
         static let diary = "일기장"
         static let share = "공유"
         static let noneTitle = "제목없음"
     }
-
+    
     // MARK: - Properties
     
     private let diaryListView = DiaryListView(frame: .zero)
@@ -26,16 +26,7 @@ final class DiaryListViewController: UIViewController {
         setupNavigationBar()
         setupDiaryListView()
         adaptDelegate()
-        // NETWORK TEST 37.785834
-//        -122.406417
-        NetworkManager.shared.requestWeatherData(latitude: "37.785834",
-                                                 longitude: "129.100007") { data in
-            print(data.weather[0].main)
-            print(data.weather[0].icon)
-            print(data.sys.country)
-            print(data.name)
-        }
-        // NETWORK TEST
+        CoreDataManager.shared.delegate = self
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -79,6 +70,7 @@ extension DiaryListViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let diaryViewController = generateViewController(with: indexPath.row)
         navigationController?.pushViewController(diaryViewController, animated: true)
+        tableView.deselectRow(at: indexPath, animated: true)
     }
     
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
@@ -125,5 +117,11 @@ private extension DiaryListViewController {
         diaryViewController.coreDataDiary = CoreDataManager.shared.reversedDiaries[indexPath]
         diaryViewController.mode = .modify
         return diaryViewController
+    }
+}
+
+extension DiaryListViewController: CoreDataManagerDelegate {
+    func didUpdateCoredata() {
+        self.diaryListView.tableView.reloadData()
     }
 }

@@ -22,8 +22,10 @@ final class DiaryViewController: UIViewController {
     }
 
     // MARK: - Properties
-
+    
     let locationManager = CLLocationManager()
+    var location: [String: String] = [:]
+    var icon: String?
     let diaryView = DiaryView(frame: .zero)
     var coreDataDiary: Diary?
     var mode: PageMode? = .create
@@ -48,6 +50,7 @@ final class DiaryViewController: UIViewController {
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        
         performAppropriateMode()
     }
     
@@ -88,7 +91,7 @@ final class DiaryViewController: UIViewController {
     }
     
     private func generateShareAlertAction() -> UIAlertAction {
-        let model = makeDiaryModel()
+        let model = DiaryModel(title: "d", body: "d", createdAt: 1, weatherIcon: "")
         let share = UIAlertAction(title: AlertMassage.shareActionTitle, style: .default) { [weak self] _ in
             let diaryToShare: [Any] = [MyActivityItemSource(title: model.title, text: model.body)]
             let activityViewController = UIActivityViewController(activityItems: diaryToShare, applicationActivities: nil)
@@ -105,6 +108,7 @@ final class DiaryViewController: UIViewController {
             let cancel = UIAlertAction(title: AlertMassage.cancel, style: .cancel)
             let delete = UIAlertAction(title: NameSpace.delete, style: .destructive) { [weak self] _ in
                 CoreDataManager.shared.delete(diary: coreDataDiary)
+                self?.mode = nil
                 self?.navigationController?.popViewController(animated: true)
             }
             self?.generateAlertController(title: AlertMassage.deleteAlertTitle, message: AlertMassage.deleteAlertMessage, style: .alert, actions: [cancel, delete])
@@ -123,7 +127,7 @@ final class DiaryViewController: UIViewController {
         generateAlertController(title: nil, message: nil, style: .actionSheet, actions: [share, cancel, delete])
     }
 }
-
+    
 // MARK: - CoreDataManager Methods
 
 extension DiaryViewController {
@@ -144,8 +148,13 @@ extension DiaryViewController {
     
     private func createDiary() {
         guard diaryView.diaryTextView.text.isEmpty == false else { return }
-        let diaryModel = makeDiaryModel()
-        CoreDataManager.shared.create(with: diaryModel)
+        
+        NetworkManager.shared.requestWeatherData(latitude: location["lat"], longitude: location["lon"]) { [self] data in
+            DispatchQueue.main.async { [weak self] in
+                guard let diaryModel = self?.makeDiaryModel(with: data.weather[0].icon) else { return }
+                CoreDataManager.shared.create(with: diaryModel)
+            }
+        }
     }
     
     private func modifyDiary() {
@@ -157,25 +166,28 @@ extension DiaryViewController {
         }
     }
     
-    private func makeDiaryModel() -> DiaryModel {
+    private func makeDiaryModel(with icon: String) -> DiaryModel {
         let distinguishedTitleAndBody = diaryView.diaryTextView.text.components(separatedBy: NameSpace.twiceLineChange)
         let createdAt = Date().timeIntervalSince1970
         let filteredList = distinguishedTitleAndBody.filter { return $0 != NameSpace.whiteSpace && $0 != NameSpace.lineChange }
         guard filteredList.isEmpty == false else {
             let title = AlertMassage.newDiary
             let body = NameSpace.whiteSpace
-            return DiaryModel(title: String(title), body: String(body), createdAt: createdAt)
+            return DiaryModel(title: String(title), body: String(body), createdAt: createdAt, weatherIcon: icon)
         }
-        
         let title = distinguishedTitleAndBody[0] == NameSpace.whiteSpace ? " " : distinguishedTitleAndBody[0]
         let body = distinguishedTitleAndBody.count == 1 ? NameSpace.whiteSpace : distinguishedTitleAndBody[1...distinguishedTitleAndBody.count-1].joined(separator: NameSpace.twiceLineChange)
-        return DiaryModel(title: String(title), body: String(body), createdAt: createdAt)
+        return DiaryModel(title: String(title), body: String(body), createdAt: createdAt, weatherIcon: icon)
     }
     
     @objc private func updateDiary() {
         guard let coreDataDiary = coreDataDiary else { return }
-        let diaryModel = makeDiaryModel()
-        CoreDataManager.shared.update(diary: coreDataDiary, with: diaryModel)
+        NetworkManager.shared.requestWeatherData(latitude: location["lat"], longitude: location["lon"]) { [self] data in
+            DispatchQueue.main.async { [weak self] in
+                guard let diaryModel = self?.makeDiaryModel(with: data.weather[0].icon) else { return }
+                CoreDataManager.shared.update(diary: coreDataDiary, with: diaryModel)
+            }
+        }
     }
 }
 
@@ -221,12 +233,15 @@ extension DiaryViewController {
     }
 }
 
+// MARK: - CLLocationManagerDelegate
+
 extension DiaryViewController: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         if let coordinate = locations.last?.coordinate {
             locationManager.stopUpdatingLocation()
-            print(coordinate.latitude)
-            print(coordinate.longitude)
+            location["lat"] = String(coordinate.latitude)
+            location["lon"] = String(coordinate.longitude)
+            print("위치확인 완료")
         }
     }
     

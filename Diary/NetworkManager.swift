@@ -26,6 +26,7 @@ final class NetworkManager {
         }
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
+        
         let dataTask = URLSession.shared.dataTask(with: request) { data, response, error in
             guard error == nil else { return }
             let successRange = 200..<300

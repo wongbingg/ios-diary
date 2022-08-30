@@ -7,7 +7,12 @@
 import UIKit
 import CoreData
 
+protocol CoreDataManagerDelegate: AnyObject {
+    func didUpdateCoredata()
+}
+
 final class CoreDataManager {
+    weak var delegate: CoreDataManagerDelegate?
     var fetchedDiaries: [Diary] = []
     var reversedDiaries: [Diary] {
         fetchedDiaries.reversed()
@@ -22,6 +27,7 @@ final class CoreDataManager {
         })
         return container
     }()
+    
     private lazy var context = persistentContainer.viewContext
     private init() {
         fetch()
@@ -32,9 +38,11 @@ final class CoreDataManager {
         newItem.setValue(model.title, forKey: CoreDataKeys.title)
         newItem.setValue(model.body, forKey: CoreDataKeys.body)
         newItem.setValue(model.createdAt, forKey: CoreDataKeys.createdAt)
+        newItem.setValue(model.weatherIcon, forKey: "weatherIcon") // add
         do {
             try context.save()
             fetch()
+            delegate?.didUpdateCoredata()
         } catch {
             print(error.localizedDescription)
         }
@@ -55,10 +63,11 @@ final class CoreDataManager {
         diary.title = diaryModel.title
         diary.body = diaryModel.body
         diary.createdAt = diaryModel.createdAt
-        
+        diary.weatherIcon = diaryModel.weatherIcon // add
         do {
             try context.save()
             fetch()
+            delegate?.didUpdateCoredata()
         } catch {
             print(error.localizedDescription)
         }
@@ -67,6 +76,7 @@ final class CoreDataManager {
     private func fetch() {
         do {
             fetchedDiaries = try context.fetch(Diary.fetchRequest())
+//            delegate?.didUpdateCoredata()
         } catch {
             print(error.localizedDescription)
         }
