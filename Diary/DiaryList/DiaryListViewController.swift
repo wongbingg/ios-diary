@@ -84,7 +84,7 @@ private extension DiaryListViewController {
     
     func generateShareAction(with indexPath: Int) -> UIContextualAction {
         let shareAction = UIContextualAction(style: .normal, title: DiaryListNameSpace.share) { [weak self] _, _, _ in
-            let model = CoreDataManager.shared.fetchedDiaries
+            let model = CoreDataManager.shared.reversedDiaries
             let title = model[indexPath].title ?? DiaryListNameSpace.noneTitle
             let body = model[indexPath].body ?? DiaryListNameSpace.noneTitle
             let diaryToShare: [Any] = [MyActivityItemSource(title: title, text: body)]
@@ -100,7 +100,7 @@ private extension DiaryListViewController {
     
     func generateDeleteAction(with indexPath: IndexPath, in tableView: UITableView) -> UIContextualAction {
         let deleteAction = UIContextualAction(style: .destructive, title: NameSpace.delete) { _, _, _ in
-            let diary = CoreDataManager.shared.fetchedDiaries[indexPath.row]
+            let diary = CoreDataManager.shared.reversedDiaries[indexPath.row]
             CoreDataManager.shared.delete(diary: diary)
             tableView.beginUpdates()
             tableView.deleteRows(at: [indexPath], with: .fade)
@@ -112,7 +112,7 @@ private extension DiaryListViewController {
     
     func generateViewController(with indexPath: Int) -> UIViewController {
         let diaryViewController = DiaryViewController()
-        diaryViewController.coreDataDiary = CoreDataManager.shared.fetchedDiaries[indexPath]
+        diaryViewController.coreDataDiary = CoreDataManager.shared.reversedDiaries[indexPath]
         diaryViewController.mode = .modify
         return diaryViewController
     }

@@ -14,6 +14,7 @@ final class DiaryListCell: UITableViewCell {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
         label.font = UIFont.preferredFont(forTextStyle: .title2)
+        label.setContentCompressionResistancePriority(.required, for: .vertical)
         return label
     }()
     
