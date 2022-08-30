@@ -26,6 +26,15 @@ final class DiaryListViewController: UIViewController {
         setupNavigationBar()
         setupDiaryListView()
         adaptDelegate()
+        //NETWORK TEST
+        NetworkManager.shared.requestWeatherData(latitude: "35.3341023",
+                                                 longitude: "129.0058379") { data in
+            print(data.weather[0].main)
+            print(data.weather[0].icon)
+            print(data.sys.country)
+            print(data.name)
+        }
+        //NETWORK TEST
     }
     
     override func viewWillAppear(_ animated: Bool) {
